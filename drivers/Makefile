@@ -182,4 +182,5 @@ obj-$(CONFIG_NVMEM)		+= nvmem/
 obj-$(CONFIG_FPGA)		+= fpga/
 obj-$(CONFIG_FSI)		+= fsi/
 obj-$(CONFIG_TEE)		+= tee/
+obj-$(CONFIG_MSTAR_DRIVERS) += sstar/
 obj-$(CONFIG_MULTIPLEXER)	+= mux/

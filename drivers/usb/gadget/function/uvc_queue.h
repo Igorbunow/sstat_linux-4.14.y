@@ -34,6 +34,9 @@ struct uvc_buffer {
 	void *mem;
 	unsigned int length;
 	unsigned int bytesused;
+#if defined(CONFIG_SS_GADGET) ||defined(CONFIG_SS_GADGET_MODULE)
+	bool bFrameEnd;
+#endif
 };
 
 #define UVC_QUEUE_DISCONNECTED		(1 << 0)
@@ -47,7 +50,9 @@ struct uvc_video_queue {
 	__u32 sequence;
 
 	unsigned int buf_used;
-
+#if defined(CONFIG_SS_GADGET) ||defined(CONFIG_SS_GADGET_MODULE)
+	bool bFrameEnd;
+#endif
 	spinlock_t irqlock;	/* Protects flags and irqqueue */
 	struct list_head irqqueue;
 };

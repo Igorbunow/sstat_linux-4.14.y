@@ -213,7 +213,6 @@ static struct usb_endpoint_descriptor as_out_ep_desc  = {
 	.bEndpointAddress =	USB_DIR_OUT,
 	.bmAttributes =		USB_ENDPOINT_SYNC_ADAPTIVE
 				| USB_ENDPOINT_XFER_ISOC,
-	.wMaxPacketSize	=	cpu_to_le16(UAC1_OUT_EP_MAX_PACKET_SIZE),
 	.bInterval =		4,
 };
 
@@ -244,7 +243,6 @@ static struct usb_endpoint_descriptor as_in_ep_desc  = {
 	.bEndpointAddress =	USB_DIR_IN,
 	.bmAttributes =		USB_ENDPOINT_SYNC_ASYNC
 				| USB_ENDPOINT_XFER_ISOC,
-	.wMaxPacketSize	=	cpu_to_le16(UAC1_OUT_EP_MAX_PACKET_SIZE),
 	.bInterval =		4,
 };
 
@@ -387,6 +385,15 @@ static int audio_get_endpoint_req(struct usb_function *f,
 		break;
 	case UAC_GET_MEM:
 		break;
+	case -ESHUTDOWN:
+		if (ep == out_ep)
+		{
+			f_audio_out_ep_complete(ep, req);
+		}
+		else if (ep == in_ep)
+		{
+			f_audio_in_ep_complete(ep, req);
+		}
 	default:
 		break;
 	}

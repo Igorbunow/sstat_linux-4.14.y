@@ -48,6 +48,18 @@
 #include <linux/mtd/partitions.h>
 #include <linux/of.h>
 
+#if defined(CONFIG_MS_NAND) || defined(CONFIG_MS_NAND_MODULE)
+#include "../../sstar/include/ms_types.h"
+#include "../../sstar/unfd/inc/common/drvNAND.h"
+#define HERE //printk(KERN_ERR"[%s]%d\n",__FILE__,__LINE__)
+#endif
+
+#if defined(CONFIG_MS_SPINAND) || defined(CONFIG_MS_SPINAND_MODULE)
+//	#include "../../sstar/include/ms_types.h"
+#include "../../sstar/spinand/drv/mdrv_spinand.h"
+#define HERE //printk(KERN_ERR"[%s]%d\n",__FILE__,__LINE__)
+#endif
+
 static int nand_get_device(struct mtd_info *mtd, int new_state);
 
 static int nand_do_write_oob(struct mtd_info *mtd, loff_t to,
@@ -1154,6 +1166,7 @@ static int nand_setup_data_interface(struct nand_chip *chip, int chipnr)
 err:
 	return ret;
 }
+
 
 /**
  * nand_init_data_interface - find the best data interface and timings
@@ -4216,6 +4229,34 @@ int nand_scan_ident(struct mtd_info *mtd, int maxchips,
 	/* Set the default functions */
 	nand_set_defaults(chip);
 
+#if defined(CONFIG_MS_NAND) || defined(CONFIG_MS_NAND_MODULE) || defined(CONFIG_MS_SPINAND)|| defined(CONFIG_MS_SPINAND_MODULE)//ENABLE_MODULE_NAND_FLASH == 1
+	if(chip->mtd_param_init != NULL)
+	{
+		struct nand_flash_dev *type;
+		int err;
+		err = chip->mtd_param_init(mtd, chip,  &nand_maf_id, &nand_dev_id, table);
+		type = ERR_PTR(err);
+		HERE;
+		if(IS_ERR(type) && type != 0)
+		{
+			HERE;
+			ret = nand_detect(chip, table);
+			HERE;
+			if (ret)
+			{
+				HERE;
+				chip->select_chip(mtd, -1);
+				HERE;
+				return PTR_ERR(type);
+			}
+		}
+		else
+			chip->erase = single_erase;
+	}
+	i = 1;
+	HERE;
+#else
+
 	/* Read the flash type */
 	ret = nand_detect(chip, table);
 	if (ret) {
@@ -4248,7 +4289,7 @@ int nand_scan_ident(struct mtd_info *mtd, int maxchips,
 	}
 	if (i > 1)
 		pr_info("%d chips detected\n", i);
-
+#endif
 	/* Store the number of chips and calc total size for mtd */
 	chip->numchips = i;
 	mtd->size = i * chip->chipsize;

@@ -2192,6 +2192,7 @@ static const struct usb_device_id option_ids[] = {
 	{ USB_DEVICE(0x1508, 0x1001),						/* Fibocom NL668 (IOT version) */
 	  .driver_info = RSVD(4) | RSVD(5) | RSVD(6) },
 	{ USB_DEVICE(0x1782, 0x4d10) },						/* Fibocom L610 (AT mode) */
+	{ USB_DEVICE(0x1782, 0x4e00) },						/* Air724UG */
 	{ USB_DEVICE_INTERFACE_CLASS(0x1782, 0x4d11, 0xff) },			/* Fibocom L610 (ECM/RNDIS mode) */
 	{ USB_DEVICE(0x2cb7, 0x0104),						/* Fibocom NL678 series */
 	  .driver_info = RSVD(4) | RSVD(5) },
@@ -2247,6 +2248,8 @@ static struct usb_serial_driver option_1port_device = {
 #ifdef CONFIG_PM
 	.suspend           = usb_wwan_suspend,
 	.resume            = usb_wwan_resume,
+	/* add by Air724UG */
+	.reset_resume      = usb_wwan_resume,
 #endif
 };
 
@@ -2297,6 +2300,12 @@ static int option_probe(struct usb_serial *serial,
 	 * can change (e.g. Quectel EP06).
 	 */
 	if (device_flags & NUMEP2 && iface_desc->bNumEndpoints != 2)
+		return -ENODEV;
+
+	/* add by Air724UG */
+	if (dev_desc->idVendor == cpu_to_le16(0x1782) && 
+		dev_desc->idProduct == cpu_to_le16(0x4e00) && 
+		iface_desc->bInterfaceNumber <= 1)
 		return -ENODEV;
 
 	/* Store the device flags so we can use them during attach. */

@@ -19,6 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <linux/clk.h>
 #include <linux/version.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -233,7 +234,7 @@ static int dwc3_core_soft_reset(struct dwc3 *dwc)
 	 * XHCI driver will reset the host block. If dwc3 was configured for
 	 * host-only mode, then we can return early.
 	 */
-	if (dwc->dr_mode == USB_DR_MODE_HOST)
+	if (dwc->dr_mode == USB_DR_MODE_HOST || dwc->is_hibernated == true)
 		return 0;
 
 	reg = dwc3_readl(dwc->regs, DWC3_DCTL);
@@ -433,7 +434,7 @@ static int dwc3_setup_scratch_buffers(struct dwc3 *dwc)
 		return 0;
 
 	 /* should never fall here */
-	if (!WARN_ON(dwc->scratchbuf))
+	if (WARN_ON(!dwc->scratchbuf))
 		return 0;
 
 	scratch_addr = dma_map_single(dwc->sysdev, dwc->scratchbuf,
@@ -553,7 +554,7 @@ static int dwc3_phy_setup(struct dwc3 *dwc)
 	 * to '1' after the core initialization is completed.
 	 */
 	if (dwc->revision > DWC3_REVISION_194A)
-		reg |= DWC3_GUSB3PIPECTL_SUSPHY;
+		//reg |= DWC3_GUSB3PIPECTL_SUSPHY;
 
 	if (dwc->u2ss_inp3_quirk)
 		reg |= DWC3_GUSB3PIPECTL_U2SSINP3OK;
@@ -726,6 +727,11 @@ static void dwc3_core_setup_global_control(struct dwc3 *dwc)
 		 * REVISIT Enabling this bit so that host-mode hibernation
 		 * will work. Device-mode hibernation is not yet implemented.
 		 */
+		
+		dwc->has_hibernation = true;
+		ret = dwc3_alloc_scratch_buffers(dwc);
+		if (ret)
+			goto err5;
 		reg |= DWC3_GCTL_GBLHIBERNATIONEN;
 		break;
 	default:
@@ -771,7 +777,7 @@ static int dwc3_core_ulpi_init(struct dwc3 *dwc);
  *
  * Returns 0 on success otherwise negative errno.
  */
-static int dwc3_core_init(struct dwc3 *dwc)
+int dwc3_core_init(struct dwc3 *dwc)
 {
 	u32			reg;
 	int			ret;
@@ -879,7 +885,8 @@ static int dwc3_core_init(struct dwc3 *dwc)
 	}
 
 	return 0;
-
+err5:
+	dwc3_free_scratch_buffers(dwc);
 err4:
 	phy_power_off(dwc->usb3_generic_phy);
 
@@ -1202,6 +1209,7 @@ static int dwc3_probe(struct platform_device *pdev)
 	struct device		*dev = &pdev->dev;
 	struct resource		*res;
 	struct dwc3		*dwc;
+	struct clk* clock;
 
 	int			ret;
 
@@ -1225,7 +1233,7 @@ static int dwc3_probe(struct platform_device *pdev)
 	dwc->xhci_resources[0].flags = res->flags;
 	dwc->xhci_resources[0].name = res->name;
 
-	res->start += DWC3_GLOBALS_REGS_START;
+	//res->start += DWC3_GLOBALS_REGS_START;
 
 	/*
 	 * Request memory region but exclude xHCI regs,
@@ -1244,6 +1252,9 @@ static int dwc3_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, dwc);
 	dwc3_cache_hwparams(dwc);
+	
+	clock = of_clk_get_by_name(dev->of_node, "ss_clk");
+	clk_prepare_enable(clock);
 
 	spin_lock_init(&dwc->lock);
 
@@ -1268,9 +1279,6 @@ static int dwc3_probe(struct platform_device *pdev)
 	if (ret)
 		goto err3;
 
-	ret = dwc3_alloc_scratch_buffers(dwc);
-	if (ret)
-		goto err3;
 
 	ret = dwc3_core_init(dwc);
 	if (ret) {

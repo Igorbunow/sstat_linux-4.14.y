@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0
+EXTRA_CFLAGS      +=  -Idrivers/sstar/include
 # CPUfreq core
 obj-$(CONFIG_CPU_FREQ)			+= cpufreq.o freq_table.o
 

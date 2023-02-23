@@ -33,6 +33,18 @@ config PHY_PISTACHIO_USB
 	help
 	  Enable this to support the USB2.0 PHY on the IMG Pistachio SoC.
 
+config PHY_SSTAR_INFINITY6E
+	tristate "Sigmastar USB PHY Driver"
+	depends on ARCH_INFINITY6E
+	select GENERIC_PHY
+	default ARCH_INFINITY6E
+	help
+	  Enable this to support Sigmastar USB PHY driver for Sigmastar
+	  SoC. This driver will do the PHY initialization and shutdown.
+	  The PHY driver will be used by Sigmastar USB3.0 driver.
+
+	  To compile this driver as a module, choose M here.
+
 config PHY_XGENE
 	tristate "APM X-Gene 15Gbps PHY support"
 	depends on HAS_IOMEM && OF && (ARM64 || COMPILE_TEST)

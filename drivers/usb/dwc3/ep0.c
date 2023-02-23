@@ -34,6 +34,7 @@
 #include "debug.h"
 #include "gadget.h"
 #include "io.h"
+#include "../drivers/sstar/include/ms_platform.h"
 
 static void __dwc3_ep0_do_control_status(struct dwc3 *dwc, struct dwc3_ep *dep);
 static void __dwc3_ep0_do_control_data(struct dwc3 *dwc,
@@ -80,6 +81,7 @@ static int dwc3_ep0_start_trans(struct dwc3_ep *dep)
 	dwc = dep->dwc;
 
 	memset(&params, 0, sizeof(params));
+	Chip_Flush_MIU_Pipe();
 	params.param0 = upper_32_bits(dwc->ep0_trb_addr);
 	params.param1 = lower_32_bits(dwc->ep0_trb_addr);
 
@@ -649,7 +651,7 @@ static int dwc3_ep0_set_config(struct dwc3 *dwc, struct usb_ctrlrequest *ctrl)
 			 * nothing is pending from application.
 			 */
 			reg = dwc3_readl(dwc->regs, DWC3_DCTL);
-			reg |= (DWC3_DCTL_ACCEPTU1ENA | DWC3_DCTL_ACCEPTU2ENA);
+			//reg |= (DWC3_DCTL_ACCEPTU1ENA | DWC3_DCTL_ACCEPTU2ENA);
 			dwc3_writel(dwc->regs, DWC3_DCTL, reg);
 		}
 		break;

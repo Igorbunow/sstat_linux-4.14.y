@@ -28,6 +28,9 @@
 
 /*-------------------------------------------------------------------------*/
 
+#ifndef MP_USB_MSTAR
+#include <mstar/mpatch_macro.h>
+#endif
 #define	PORT_WAKE_BITS	(PORT_WKOC_E|PORT_WKDISC_E|PORT_WKCONN_E)
 
 #ifdef	CONFIG_PM
@@ -376,6 +379,9 @@ static int ehci_bus_suspend (struct usb_hcd *hcd)
 
  done:
 	ehci->next_statechange = jiffies + msecs_to_jiffies(10);
+#if (MP_USB_MSTAR==1)
+	disable_irq(hcd->irq); //20120301, for system suspend-resume
+#endif
 	ehci->enabled_hrtimer_events = 0;
 	ehci->next_hrtimer_event = EHCI_HRTIMER_NO_EVENT;
 	spin_unlock_irq (&ehci->lock);
@@ -516,6 +522,9 @@ static int ehci_bus_resume (struct usb_hcd *hcd)
 	spin_lock_irq(&ehci->lock);
 	if (ehci->shutdown)
 		goto shutdown;
+#if (MP_USB_MSTAR==1)
+	enable_irq(hcd->irq); //20150226, suspend fail cause ehci_hcd_mstar_drv_resume() not running
+#endif
 	ehci_writel(ehci, INTR_MASK, &ehci->regs->intr_enable);
 	(void) ehci_readl(ehci, &ehci->regs->intr_enable);
 	spin_unlock_irq(&ehci->lock);
@@ -1232,6 +1241,15 @@ int ehci_hub_control(
 			 * which can be fine if this root hub has a
 			 * transaction translator built in.
 			 */
+#if (MP_USB_MSTAR==1)
+			if (!(temp & PORT_CONNECT))
+			{
+				printk("[USB] device has gone before bus reset\n");
+				retval = -ENODEV;
+				goto error_exit;
+			}
+			{
+#else
 			if ((temp & (PORT_PE|PORT_CONNECT)) == PORT_CONNECT
 					&& !ehci_is_TDI(ehci)
 					&& PORT_USB11 (temp)) {
@@ -1240,6 +1258,7 @@ int ehci_hub_control(
 					wIndex + 1);
 				temp |= PORT_OWNER;
 			} else {
+#endif
 				temp |= PORT_RESET;
 				temp &= ~PORT_PE;
 

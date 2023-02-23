@@ -32,6 +32,7 @@
 #include <asm/virt.h>
 
 #include <clocksource/arm_arch_timer.h>
+#include <asm/secure_cntvoff.h>
 
 #undef pr_fmt
 #define pr_fmt(fmt) "arch_timer: " fmt
@@ -827,6 +828,13 @@ static int arch_timer_starting_cpu(unsigned int cpu)
 {
 	struct clock_event_device *clk = this_cpu_ptr(arch_timer_evt);
 	u32 flags;
+	
+	#if defined(CONFIG_SMP) && !defined(CONFIG_LH_RTOS)
+	/* PATCH from Kernel 5.1:
+	* https://patchwork.kernel.org/patch/10353743/
+	*/
+	secure_cntvoff_init();
+	#endif
 
 	__arch_timer_setup(ARCH_TIMER_TYPE_CP15, clk);
 
@@ -840,6 +848,7 @@ static int arch_timer_starting_cpu(unsigned int cpu)
 	}
 
 	arch_counter_set_user_access();
+
 	if (evtstrm_enable)
 		arch_timer_configure_evtstream();
 
