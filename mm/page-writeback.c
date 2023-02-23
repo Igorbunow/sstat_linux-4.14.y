@@ -2775,6 +2775,7 @@ int test_clear_page_writeback(struct page *page)
 	__unlock_page_memcg(memcg);
 	return ret;
 }
+EXPORT_SYMBOL(test_clear_page_writeback);
 
 int __test_set_page_writeback(struct page *page, bool keep_write)
 {

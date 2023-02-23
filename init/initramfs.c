@@ -649,7 +649,7 @@ static int __init populate_rootfs(void)
 		err = unpack_to_rootfs((char *)initrd_start,
 			initrd_end - initrd_start);
 		if (err)
-			printk(KERN_EMERG "Initramfs unpacking failed: %s\n", err);
+			printk(KERN_ERR "Initramfs unpacking failed: %s\n", err);
 		free_initrd();
 #endif
 	}
