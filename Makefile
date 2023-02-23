@@ -277,6 +277,10 @@ KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
 KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))$(EXTRAVERSION)
 export VERSION PATCHLEVEL SUBLEVEL KERNELRELEASE KERNELVERSION
 
+SSTAR_CHIP_FILE := '.sstar_chip.txt'
+SSTAR_CHIP_MODEL := $(strip $(shell cat $(SSTAR_CHIP_FILE)))
+export SSTAR_CHIP_MODEL
+
 # SUBARCH tells the usermode build what the underlying arch is.  That is set
 # first, and if a usermode build is happening, the "ARCH=um" on the command
 # line overrides the setting of ARCH below.  If a native build is happening,
@@ -840,7 +844,7 @@ KBUILD_CFLAGS   += $(call cc-option,-Werror=implicit-int)
 KBUILD_CFLAGS   += $(call cc-option,-Werror=strict-prototypes)
 
 # Prohibit date/time macros, which would make the build non-deterministic
-KBUILD_CFLAGS   += $(call cc-option,-Werror=date-time)
+#KBUILD_CFLAGS   += $(call cc-option,-Werror=date-time)
 
 # enforce correct pointer usage
 KBUILD_CFLAGS   += $(call cc-option,-Werror=incompatible-pointer-types)
@@ -1060,10 +1064,68 @@ define filechk_kernel.release
 	echo "$(KERNELVERSION)$$($(CONFIG_SHELL) $(srctree)/scripts/setlocalversion $(srctree))"
 endef
 
+MS_KERNEL_TYPE :=
+ifneq ($(CONFIG_MS_KERNEL_TYPE),"")
+    MS_KERNEL_TYPE=--lib_type $(CONFIG_MS_KERNEL_TYPE)
+endif
+
+# Retrieve platform ID abbreviation with the following rules: UPPER_CASE(Part I+II+III)
+# Part I  : the leading charactor
+# Part II : the 1st digit
+# Part III: the the reset after 1st digit
+# for examples: foobar2m -> F2M
+MS_PLATFORM_ID := $(shell echo $(SSTAR_CHIP_MODEL) | sed -e 's/^\([a-zA-Z]\)[a-zA-Z]*\([0-9]*\)\(.*\)/\1\2\3/g' | tr a-z A-Z)
+
+COMMITNUMBER := g$(shell git log --format=%h -n 1 2> /dev/null)
+BRANCH_ID := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null | sed -e 's/\//_/g')
+
+GCCVERISON := $(shell $(CC) -dumpversion)
+
+#COMMITNUMBER := g$(shell git log --format=%h -n 1 2> /dev/null)
+GITVERNUM := $(shell git log --format=%H -n 1 2> /dev/null)
+#BRANCH_ID := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null | sed -e 's/\//_/g')
+BUILDCODEDATE = $(shell date +"%Y_%m_%d_%H_%M_%S")
+BUILDCODEUSER = $(shell whoami)
+
+
+ifeq ($(COMMITNUMBER),g)
+file := gitInformation.txt
+gitLog := $(shell strings ${file})
+gitTemp := $(subst \#, ,$(gitLog))
+COMMITNUMBER := g$(word 1, $(gitTemp))
+BRANCH_ID := g$(word 2, $(gitTemp))
+endif
+
 # Store (new) KERNELRELEASE string in include/config/kernel.release
 include/config/kernel.release: include/config/auto.conf FORCE
 	$(call filechk,kernel.release)
+ifneq ($(CONFIG_ARCH_SSTAR),)
+	@echo '  GCC version: $(GCCVERISON)'
+ifeq ($(MS_PLATFORM_ID),)
+	@echo "ERROR!! MS_PLATOFRM_ID is empty!!"; /bin/false
+else
+	@echo '  MVXV'
+	@echo '  changelist ${COMMITNUMBER}'
+	@echo '  BRANCHID   ${BRANCH_ID} '
+	@echo '  MS_PLATFORM_ID: $(MS_PLATFORM_ID)'
+	@python scripts/ms_gen_mvxv_h.py drivers/sstar/include/ms_version.h --comp_id KL_LX409 \
+	--changelist $(COMMITNUMBER) --chip_id $(MS_PLATFORM_ID) --branch $(BRANCH_ID) $(MS_KERNEL_TYPE)
+endif
+endif
 
+ifneq ($(CONFIG_SSTAR_CEVAXM6),)
+	@python scripts/ms_gen_ceva_version_h.py drivers/sstar/include/ms_version.h --comp_id KL_LX409 \
+        --changelist $(COMMITNUMBER) --chip_id $(MS_PLATFORM_ID) --branch $(BRANCH_ID) $(MS_KERNEL_TYPE)\
+        --gitver $(GITVERNUM) --builddate $(BUILDCODEDATE) --buildusr $(BUILDCODEUSER)
+endif
+
+ifneq ($(CONFIG_CAM_DRIVERS),)
+	@mkdir -p drivers/sstar/camdriver/include
+	@python scripts/ms_gen_mvxv_h.py drivers/sstar/camdriver/include/mdrv_ms_version.h \
+	--changelist g$(shell cd drivers/sstar/camdriver;git log --format=%h -n 1 2> /dev/null) \
+	--branch $(shell cd drivers/sstar/camdriver;git rev-parse --abbrev-ref HEAD 2> /dev/null | sed -e 's/\//_/g') \
+	$(MS_KERNEL_TYPE) --chip_id $(MS_PLATFORM_ID) --comp_id CAMDRV_LX409
+endif
 
 # Things we need to do before we recursively start building the kernel
 # or the modules are listed in "prepare".
@@ -1267,6 +1329,9 @@ modules: $(vmlinux-dirs) $(if $(KBUILD_BUILTIN),vmlinux) modules.builtin
 	$(Q)$(AWK) '!x[$$0]++' $(vmlinux-dirs:%=$(objtree)/%/modules.order) > $(objtree)/modules.order
 	@$(kecho) '  Building modules, stage 2.';
 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modpost
+	@if [ -e "./ms_pack_modules.sh" ]; then \
+			./ms_pack_modules.sh ${MODULE_PACK_OPTIONS}; \
+		fi
 
 modules.builtin: $(vmlinux-dirs:%=%/modules.builtin)
 	$(Q)$(AWK) '!x[$$0]++' $^ > $(objtree)/modules.builtin
