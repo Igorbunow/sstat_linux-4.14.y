@@ -377,6 +377,8 @@ struct mmc_host {
 
 	int			rescan_disable;	/* disable card detection */
 	int			rescan_entered;	/* used with nonremovable devices */
+	int			rescan_force;   /* force rescan of (nonremovable) devices */
+    int			rescan_keep_power; /* Do not power off card */
 
 	int			need_retune;	/* re-tuning is needed */
 	int			hold_retune;	/* hold off re-tuning */
@@ -453,28 +455,32 @@ int mmc_of_parse_voltage(struct device_node *np, u32 *mask);
 
 static inline void *mmc_priv(struct mmc_host *host)
 {
-	return (void *)host->private;
+    return (void *)host->private;
 }
 
-#define mmc_host_is_spi(host)	((host)->caps & MMC_CAP_SPI)
+#define mmc_host_is_spi(host)   ((host)->caps & MMC_CAP_SPI)
 
-#define mmc_dev(x)	((x)->parent)
-#define mmc_classdev(x)	(&(x)->class_dev)
-#define mmc_hostname(x)	(dev_name(&(x)->class_dev))
+#define mmc_dev(x)  ((x)->parent)
+#define mmc_classdev(x) (&(x)->class_dev)
+#define mmc_hostname(x) (dev_name(&(x)->class_dev))
 
 int mmc_power_save_host(struct mmc_host *host);
 int mmc_power_restore_host(struct mmc_host *host);
 
 void mmc_detect_change(struct mmc_host *, unsigned long delay);
+/* HdG: HACK HACK HACK do not upstream */
+#define MMC_HAS_FORCE_DETECT_CHANGE
+void mmc_force_detect_change(struct mmc_host *host, unsigned long delay,
+                bool keep_power);
 void mmc_request_done(struct mmc_host *, struct mmc_request *);
 void mmc_command_done(struct mmc_host *host, struct mmc_request *mrq);
 
 static inline void mmc_signal_sdio_irq(struct mmc_host *host)
 {
-	host->ops->enable_sdio_irq(host, 0);
-	host->sdio_irq_pending = true;
-	if (host->sdio_irq_thread)
-		wake_up_process(host->sdio_irq_thread);
+    host->ops->enable_sdio_irq(host, 0);
+    host->sdio_irq_pending = true;
+    if (host->sdio_irq_thread)
+        wake_up_process(host->sdio_irq_thread);
 }
 
 void sdio_run_irqs(struct mmc_host *host);
@@ -483,26 +489,26 @@ void sdio_signal_irq(struct mmc_host *host);
 #ifdef CONFIG_REGULATOR
 int mmc_regulator_get_ocrmask(struct regulator *supply);
 int mmc_regulator_set_ocr(struct mmc_host *mmc,
-			struct regulator *supply,
-			unsigned short vdd_bit);
+            struct regulator *supply,
+            unsigned short vdd_bit);
 int mmc_regulator_set_vqmmc(struct mmc_host *mmc, struct mmc_ios *ios);
 #else
 static inline int mmc_regulator_get_ocrmask(struct regulator *supply)
 {
-	return 0;
+    return 0;
 }
 
 static inline int mmc_regulator_set_ocr(struct mmc_host *mmc,
-				 struct regulator *supply,
-				 unsigned short vdd_bit)
+                 struct regulator *supply,
+                 unsigned short vdd_bit)
 {
-	return 0;
+    return 0;
 }
 
 static inline int mmc_regulator_set_vqmmc(struct mmc_host *mmc,
-					  struct mmc_ios *ios)
+                      struct mmc_ios *ios)
 {
-	return -EINVAL;
+    return -EINVAL;
 }
 #endif
 

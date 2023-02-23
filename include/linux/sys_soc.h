@@ -14,6 +14,9 @@ struct soc_device_attribute {
 	const char *revision;
 	const char *soc_id;
 	const void *data;
+#ifdef CONFIG_ARCH_SSTAR
+	const char *api_version;
+#endif
 };
 
 /**
