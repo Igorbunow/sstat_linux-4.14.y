@@ -11390,7 +11390,11 @@ unlock:
 
 	return ret;
 }
+#ifdef CONFIG_DEFERRED_INIICALLS_PPERF_SYSFS
+deferred_module_init(perf_event_sysfs_init);
+#else
 device_initcall(perf_event_sysfs_init);
+#endif
 
 #ifdef CONFIG_CGROUP_PERF
 static struct cgroup_subsys_state *

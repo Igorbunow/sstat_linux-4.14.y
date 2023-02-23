@@ -34,6 +34,26 @@
 
 #include "power.h"
 
+#include <usb_patch_mstar.h>
+
+#if (MP_USB_STR_PATCH==1)
+typedef enum
+{
+	E_STR_NONE,
+	E_STR_IN_SUSPEND,
+	E_STR_IN_RESUME
+}EN_STR_STATUS;
+
+static EN_STR_STATUS enStrStatus=E_STR_NONE;
+
+bool is_suspending(void)
+{
+	return (enStrStatus == E_STR_IN_SUSPEND);
+}
+EXPORT_SYMBOL_GPL(is_suspending);
+#endif
+
+
 const char * const pm_labels[] = {
 	[PM_SUSPEND_TO_IDLE] = "freeze",
 	[PM_SUSPEND_STANDBY] = "standby",
