@@ -1170,6 +1170,8 @@ static ssize_t ahci_led_show(struct ata_port *ap, char *buf)
 	return rc;
 }
 
+#define EM_MAX_SLOTS_ (unsigned int)EM_MAX_SLOTS
+
 static ssize_t ahci_led_store(struct ata_port *ap, const char *buf,
 				size_t size)
 {
@@ -1183,8 +1185,8 @@ static ssize_t ahci_led_store(struct ata_port *ap, const char *buf,
 
 	/* get the slot number from the message */
 	pmp = (state & EM_MSG_LED_PMP_SLOT) >> 8;
-	if (pmp < EM_MAX_SLOTS) {
-		pmp = array_index_nospec(pmp, EM_MAX_SLOTS);
+	if (pmp < EM_MAX_SLOTS_) {
+		pmp = array_index_nospec(pmp, EM_MAX_SLOTS_);
 		emp = &pp->em_priv[pmp];
 	} else {
 		return -EINVAL;
