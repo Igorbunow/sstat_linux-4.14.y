@@ -413,12 +413,11 @@ static DEF_SCSI_QCMD(queuecommand)
 /* Command timeout and abort */
 static int command_abort_matching(struct us_data *us, struct scsi_cmnd *srb_match)
 {
-	struct us_data *us = host_to_us(srb->device->host);
 
 	usb_stor_dbg(us, "%s called\n", __func__);
 
 #if (MP_USB_MSTAR==1)
-	if (srb->cmnd[0] == TEST_UNIT_READY)
+	if (us->srb->cmnd[0] == TEST_UNIT_READY)
 	{
 		msleep(1000);
 	}
