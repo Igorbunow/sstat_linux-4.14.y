@@ -123,6 +123,12 @@ config MDIO_MOXART
 	  This driver supports the MDIO interface found in the network
 	  interface units of the MOXA ART SoC
 
+config MDIO_NETLINK
+	tristate "NETLINK MDIO debuging interface support"
+	help
+	  This driver supports the MDIO debuging interface support
+	  uses with mdio-tools
+
 config MDIO_OCTEON
 	tristate "Octeon and some ThunderX SOCs MDIO buses"
 	depends on 64BIT
