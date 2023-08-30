@@ -12,6 +12,11 @@
 #include <uapi/linux/mdio.h>
 #include <linux/mod_devicetable.h>
 
+#define MII_ADDR_C45		(1<<30)
+#define MII_DEVADDR_C45_SHIFT	16
+#define MII_DEVADDR_C45_MASK	GENMASK(20, 16)
+#define MII_REGADDR_C45_MASK	GENMASK(15, 0)
+
 struct mii_bus;
 
 /* Multiple levels of nesting are possible. However typically this is

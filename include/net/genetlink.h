@@ -63,6 +63,7 @@ struct genl_family {
 	unsigned int		n_mcgrps;
 	unsigned int		mcgrp_offset;	/* private */
 	struct module		*module;
+	const struct nla_policy *policy;
 };
 
 struct nlattr **genl_family_attrbuf(const struct genl_family *family);
