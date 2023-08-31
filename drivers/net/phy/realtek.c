@@ -23,6 +23,12 @@
 /* Interrupt, WOL Enable, and LEDs Function Registers */
 #define RTL8201F_INER		0x13
 #define RTL8201F_INER_MASK	0x3800
+#define RTL8201F_INER_LED_MASK	0x0030
+#define RTL8201F_INER_LED_VAL	0x0000
+/* Fiber Mode and Loopback Register */
+#define RTL8201F_FMLR		0x1c
+#define RTL8201F_FMLR_INIT	0x04
+#define RTL8201F_FMLR_MASK	0x0026
 
 #define RTL821x_PHYSR		0x11
 #define RTL821x_PHYSR_DUPLEX	0x2000
@@ -40,6 +46,41 @@
 MODULE_DESCRIPTION("Realtek PHY driver");
 MODULE_AUTHOR("Johnson Leung");
 MODULE_LICENSE("GPL");
+
+static void rtl8201f_select_page(struct phy_device *phydev, int page)
+{
+	phy_write(phydev, RTL8201F_PGSR, page);
+}
+
+static int rtl8201f_config_init(struct phy_device *phydev)
+{
+	int ret;
+	u16 reg_val;
+
+	ret = genphy_config_init(phydev);
+	if (ret < 0)
+		return ret;
+	
+	/* Enable Enable Auto MDIX Function and Force auto MDI-X */
+	phy_write(phydev, RTL8201F_FMLR, RTL8201F_FMLR_INIT & RTL8201F_FMLR_MASK);
+	
+	
+	/* Switch LED Functions */
+	rtl8201f_select_page(phydev, 7);
+	
+	reg_val = phy_read(phydev, RTL8201F_INER);
+	
+	reg_val = reg_val & ( ~RTL8201F_INER_LED_MASK | RTL8201F_INER_LED_VAL);
+	reg_val = reg_val | (  RTL8201F_INER_LED_MASK & RTL8201F_INER_LED_VAL);
+	
+	phy_write(phydev, RTL8201F_INER, reg_val);
+	
+	
+	rtl8201f_select_page(phydev, 0);
+	
+	
+	return 0;
+}
 
 static int rtl8201f_ack_interrupt(struct phy_device *phydev)
 {
@@ -71,23 +112,21 @@ static int rtl8211f_ack_interrupt(struct phy_device *phydev)
 	return (err < 0) ? err : 0;
 }
 
-static void rtl8201f_select_page(struct phy_device *phydev, int page)
-{
-	phy_write(phydev, RTL8201F_PGSR, page);
-}
-
 static int rtl8201f_config_intr(struct phy_device *phydev)
 {
 	int err;
-
+	u16 reg_val;
+	
 	rtl8201f_select_page(phydev, 7);
-
+	
+	reg_val = phy_read(phydev, RTL8201F_INER);
+	
 	if (phydev->interrupts == PHY_INTERRUPT_ENABLED)
 		err = phy_write(phydev, RTL8201F_INER, RTL8201F_INER_MASK |
-				phy_read(phydev, RTL8201F_INER));
+				reg_val);
 	else
 		err = phy_write(phydev, RTL8201F_INER, ~RTL8201F_INER_MASK &
-				phy_read(phydev, RTL8201F_INER));
+				reg_val);
 
 	rtl8201f_select_page(phydev, 0);
 
@@ -167,6 +206,7 @@ static struct phy_driver realtek_drvs[] = {
 		.features	= PHY_BASIC_FEATURES,
 		.flags		= PHY_HAS_INTERRUPT,
 		.config_aneg	= &genphy_config_aneg,
+		.config_init	= &rtl8201f_config_init,
 		.read_status	= &genphy_read_status,
 		.ack_interrupt	= &rtl8201f_ack_interrupt,
 		.config_intr	= &rtl8201f_config_intr,
