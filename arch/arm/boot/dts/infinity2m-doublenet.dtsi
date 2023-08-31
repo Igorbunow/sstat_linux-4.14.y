@@ -260,6 +260,8 @@
             reg = <0x1F2A2000 0x800>, <0x1F343C00 0x600>, <0x1F006200 0x600>;
             pad = <0x1F203C38 0x0001 0x0000>; // pad selection from 0x0001
             phy-handle = <&phy0>;
+            local-mac-address = [00 30 1b ba 02 00];
+            mac-address = [00 30 1b ba 02 00];
             status = "ok";
             mdio-bus@emac0 {
                 phy0: ethernet-phy@0 {
@@ -275,13 +277,18 @@
             reg = <0x1F2A2800 0x800>, <0x1F344200 0x600>, <0x00000000 0x000>;
             //pad = <0x1F203C38 0x0F00 0x0300>; // pad selection from 0x0100/0x0200/0x0300/0x0400/0x0500/0x0600/0x0700/0x0800/0x0900
             pad = <0x1F203C38 0x0F00 0x0300>; // pad selection from 0x0100/0x0200/0x0300/0x0400/0x0500/0x0600/0x0700/0x0800/0x0900
+            local-mac-address = [00 30 1b ba 02 01];
+            mac-address = [00 30 1b ba 02 01];
             status = "ok";
 #if 1
             phy-handle = <&phy1>;
             mdio-bus@emac1 {
+                #address-cells = <1>;
+                #size-cells = <0>;
+                
                 phy1: ethernet-phy@1 {
-                    phy-mode = "rmii";
                     reg = <1>;
+                    phy-mode = "rmii";
                 };
             };
 #else
@@ -320,12 +327,15 @@
              */
             dma = <1>;
             spi0_mode = <5>;
-            status = "ok";
+            status = "disable";
 
+	    #address-cells = <1>;
+        #size-cells = <0>;
 	    spidev: spidev0 {
                 compatible = "rohm,dh2228fv";
+                spi-max-frequency = <25000>;
                 reg = <0>;
-                status = "ok";
+                status = "disable";
             };
         };
 /*
