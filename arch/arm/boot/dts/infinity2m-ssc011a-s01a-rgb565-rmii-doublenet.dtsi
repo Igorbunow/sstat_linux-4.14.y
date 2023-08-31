@@ -51,7 +51,7 @@
               */
             i2c-speed = <3>;
             i2c-en-dma = <0>;  // 0: disable; 1: enable;
-            status = "ok";
+            status = "disabled";
         };
 
         i2c1@1{
@@ -76,9 +76,23 @@
               *         4 -> HWI2C_USLOW(ultra slow: 50 KHz)
               *         5 -> HWI2C_UVSLOW(ultra-very slow: 25 KHz)
               */
-            i2c-speed = <3>;
+            i2c-speed = <1>;
             i2c-en-dma = <0>;  // 0: disable; 1: enable;
             status = "ok";
+            
+            eeprom: eeprom@50 {
+               compatible = "at,24c02";
+               #address-cells = <1>;
+               #size-cells = <0>;
+               reg = <0x50>;
+               /*
+               pagesize = <16>;
+               size = <2048>;
+               address-width = <8>;
+               */
+               status = "ok";
+            };
+
 /*
             focaltech@38{
                 compatible = "focaltech,fts"; 
@@ -89,7 +103,7 @@
                 focaltech,max-touch-number = <10>; 
                 //focaltech,display-coords = <0 0 720 720>; 
                 focaltech,display-coords = <0 0 480 480>; 
-                status = "ok";
+                status = "disabled";
             };
 */
             goodix_gt911@5D{ //EVB i2c-padmux=2 SSD201_SZ_DEMO_BOARD i2c-padmux=1
@@ -99,6 +113,7 @@
                 goodix_int = <PAD_GPIO13>; //SSD201_SZ_DEMO_BOARD PAD_GPIO13  EVB PAD_GPIO1
                 interrupts-extended = <&ms_gpi_intc INT_GPI_FIQ_GPIO13>;
                 interrupt-names = "goodix_int";
+                status = "disabled";
             };
         };
 
@@ -111,7 +126,7 @@
 
         disp: disp {
             compatible = "sstar,disp";
-            status = "ok";
+            status = "disabled";
             interrupts = <GIC_SPI INT_IRQ_DISP0 IRQ_TYPE_LEVEL_HIGH>, <GIC_SPI INT_IRQ_DISP_1 IRQ_TYPE_LEVEL_HIGH>, <GIC_SPI INT_IRQ_DISP_3 IRQ_TYPE_LEVEL_HIGH>;
             clocks = <&CLK_mop>, <&CLK_disp_432>, <&CLK_disp_216>;
             clock-names = "CLK_mop", "CLK_disp_432", "CLK_disp_216";
