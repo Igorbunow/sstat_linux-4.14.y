@@ -114,7 +114,12 @@
 #endif
 		.endm
 
-		.section ".start", #alloc, #execinstr
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
+    .section .start, "ax"
+#else
+    .section ".start", #alloc, #execinstr
+#endif
+
 /*
  * sort out different calling conventions
  */

@@ -642,7 +642,11 @@ __v7_setup_stack:
 	string	cpu_elf_name, "v7"
 	.align
 
-	.section ".proc.info.init", #alloc
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
+    .section .proc.info.init, "a"
+#else
+    .section ".proc.info.init", #alloc
+#endif
 
 	/*
 	 * Standard v7 proc info content
